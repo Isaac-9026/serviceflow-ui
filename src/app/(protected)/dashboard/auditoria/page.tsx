@@ -69,7 +69,7 @@ export default function AuditoriaPage() {
         <form onSubmit={handleSearch} className="flex flex-col sm:flex-row items-end gap-4">
           <div className="space-y-2 w-full sm:w-[200px]">
             <Label htmlFor="tipo">Entidad</Label>
-            <Select value={tipoEntidad} onValueChange={setTipoEntidad}>
+            <Select value={tipoEntidad} onValueChange={(val) => setTipoEntidad(val || "")}>
               <SelectTrigger>
                 <SelectValue placeholder="Tipo" />
               </SelectTrigger>

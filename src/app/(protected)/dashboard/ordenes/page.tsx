@@ -215,7 +215,7 @@ export default function OrdenesPage() {
           <form onSubmit={handleAsignar} className="space-y-4 pt-4">
             <div className="space-y-2">
               <Label htmlFor="tecnico">Técnico Disponible</Label>
-              <Select value={selectedTecnico} onValueChange={setSelectedTecnico}>
+              <Select value={selectedTecnico} onValueChange={(val) => setSelectedTecnico(val || "")}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona un técnico" />
                 </SelectTrigger>

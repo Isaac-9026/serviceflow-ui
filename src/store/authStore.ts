@@ -43,6 +43,10 @@ export const initAuth = () => {
     if (token && userStr) {
       try {
         const user = JSON.parse(userStr);
+        // Sanity check para evitar crashes si quedó basura en el storage
+        if (!user || !user.nombre) {
+          throw new Error("Usuario inválido en localStorage");
+        }
         useAuthStore.getState().setAuth(user, token);
       } catch (error) {
         useAuthStore.getState().logout();

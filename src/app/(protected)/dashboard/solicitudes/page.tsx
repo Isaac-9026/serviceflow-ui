@@ -24,7 +24,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -132,7 +131,7 @@ export default function SolicitudesPage() {
             <form onSubmit={handleSubmit} className="space-y-4 pt-4">
               <div className="space-y-2">
                 <Label htmlFor="cliente">Cliente</Label>
-                <Select value={formData.clienteId} onValueChange={(val) => setFormData({...formData, clienteId: val})}>
+                <Select value={formData.clienteId} onValueChange={(val) => setFormData({...formData, clienteId: val || ""})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona un cliente" />
                   </SelectTrigger>
@@ -145,7 +144,7 @@ export default function SolicitudesPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="categoria">Categoría del Servicio</Label>
-                <Select value={formData.categoriaId} onValueChange={(val) => setFormData({...formData, categoriaId: val})}>
+                <Select value={formData.categoriaId} onValueChange={(val) => setFormData({...formData, categoriaId: val || ""})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona la categoría" />
                   </SelectTrigger>

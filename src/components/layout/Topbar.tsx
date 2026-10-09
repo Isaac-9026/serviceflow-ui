@@ -35,14 +35,12 @@ export function Topbar() {
 
       <div className="flex items-center gap-4">
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-2 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring">
-              <Avatar className="h-9 w-9 border border-border">
-                <AvatarFallback className="bg-primary/10 text-primary">
-                  {user.nombre.substring(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            </button>
+          <DropdownMenuTrigger className="flex items-center gap-2 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer">
+            <Avatar className="h-9 w-9 border border-border">
+              <AvatarFallback className="bg-primary/10 text-primary">
+                {user.nombre.substring(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel className="font-normal">

@@ -25,7 +25,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -96,11 +95,9 @@ export default function UsuariosPage() {
         </div>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" /> Nuevo Usuario
-            </Button>
-          </DialogTrigger>
+          <Button onClick={() => setIsDialogOpen(true)} className="gap-2">
+            <Plus className="h-4 w-4" /> Nuevo Usuario
+          </Button>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Añadir Usuario</DialogTitle>
@@ -137,7 +134,7 @@ export default function UsuariosPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="rol">Rol</Label>
-                <Select value={formData.rol} onValueChange={(val) => setFormData({...formData, rol: val})}>
+                <Select value={formData.rol} onValueChange={(val) => setFormData({...formData, rol: val || ""})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona un rol" />
                   </SelectTrigger>

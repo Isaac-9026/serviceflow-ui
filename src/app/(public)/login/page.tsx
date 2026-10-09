@@ -23,10 +23,10 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await api.post("/auth/login", { username, password });
-      const { token, type, ...user } = response.data;
+      const response = await api.post("/auth/login", { email: username, password });
+      const { token, usuario } = response.data;
       
-      setAuth(user, token);
+      setAuth(usuario, token);
       toast.success("¡Bienvenido a ServiceFlow!");
       router.push("/dashboard");
     } catch (error) {
