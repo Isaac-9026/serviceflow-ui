@@ -43,6 +43,10 @@ export default function SolicitudesPage() {
   const [formData, setFormData] = useState({ clienteId: "", categoriaId: "", descripcion: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [isCotizarOpen, setIsCotizarOpen] = useState(false);
+  const [selectedSolicitudId, setSelectedSolicitudId] = useState<number | null>(null);
+  const [cotizacionData, setCotizacionData] = useState({ descripcion: "", monto: "", validoHasta: "" });
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -99,11 +103,30 @@ export default function SolicitudesPage() {
     }
   };
 
+  const handleCotizar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      await api.post(`/solicitudes/${selectedSolicitudId}/cotizaciones`, {
+        descripcion: cotizacionData.descripcion,
+        monto: Number(cotizacionData.monto),
+        validoHasta: cotizacionData.validoHasta
+      });
+      toast.success("Cotización enviada exitosamente");
+      setIsCotizarOpen(false);
+      fetchData();
+    } catch (error) {
+      toast.error("Error al crear la cotización");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const getBadgeVariant = (estado: string) => {
     switch(estado) {
       case 'PENDIENTE': return "default";
       case 'COTIZADA': return "secondary";
-      case 'APROBADA': return "outline"; // We can style this green later
+      case 'APROBADA': return "outline";
       case 'CANCELADA': 
       case 'RECHAZADA': return "destructive";
       default: return "default";
@@ -156,7 +179,7 @@ export default function SolicitudesPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="descripcion">Descripción del Problema/Requerimiento</Label>
+                <Label htmlFor="descripcion">Descripción del Problema</Label>
                 <Input 
                   id="descripcion" 
                   value={formData.descripcion} 
@@ -210,10 +233,10 @@ export default function SolicitudesPage() {
                 <TableRow key={s.id} className="group transition-colors">
                   <TableCell className="font-medium text-muted-foreground">#{s.id}</TableCell>
                   <TableCell className="text-muted-foreground">
-                    {new Date(s.fechaCreacion).toLocaleDateString()}
+                    {new Date(s.creadoEn).toLocaleDateString()}
                   </TableCell>
-                  <TableCell className="font-medium">{s.cliente.nombre}</TableCell>
-                  <TableCell>{s.categoria.nombre}</TableCell>
+                  <TableCell className="font-medium">{s.clienteNombre}</TableCell>
+                  <TableCell>{s.categoriaNombre}</TableCell>
                   <TableCell>
                     <Badge variant={getBadgeVariant(s.estado)}>
                       {s.estado}
@@ -224,6 +247,20 @@ export default function SolicitudesPage() {
                       <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" title="Ver detalles">
                         <FileText className="h-4 w-4" />
                       </Button>
+                      {s.estado === 'PENDIENTE' && (
+                        <Button 
+                          variant="secondary" 
+                          size="sm" 
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => {
+                            setSelectedSolicitudId(s.id);
+                            setCotizacionData({ descripcion: "Cotización para " + s.categoriaNombre, monto: "", validoHasta: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] });
+                            setIsCotizarOpen(true);
+                          }}
+                        >
+                          Cotizar
+                        </Button>
+                      )}
                       {s.estado === 'PENDIENTE' && (
                         <Button 
                           variant="ghost" 
@@ -243,6 +280,52 @@ export default function SolicitudesPage() {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={isCotizarOpen} onOpenChange={setIsCotizarOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Elaborar Cotización</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCotizar} className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="cot-descripcion">Descripción del Trabajo</Label>
+              <Input 
+                id="cot-descripcion" 
+                value={cotizacionData.descripcion} 
+                onChange={e => setCotizacionData({...cotizacionData, descripcion: e.target.value})} 
+                required 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="monto">Monto Estimado ($)</Label>
+              <Input 
+                id="monto" 
+                type="number"
+                min="0"
+                step="0.01"
+                value={cotizacionData.monto} 
+                onChange={e => setCotizacionData({...cotizacionData, monto: e.target.value})} 
+                required 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="validoHasta">Válido Hasta</Label>
+              <Input 
+                id="validoHasta" 
+                type="date"
+                value={cotizacionData.validoHasta} 
+                onChange={e => setCotizacionData({...cotizacionData, validoHasta: e.target.value})} 
+                required 
+              />
+            </div>
+            <div className="flex justify-end pt-4">
+              <Button type="submit" disabled={isSubmitting || !cotizacionData.monto}>
+                {isSubmitting ? "Enviando..." : "Enviar Cotización"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -24,30 +24,39 @@ export interface Categoria {
 
 export interface Solicitud {
   id: number;
-  cliente: Cliente;
-  categoria: Categoria;
+  clienteId: number;
+  clienteNombre: string;
+  categoriaId: number;
+  categoriaNombre: string;
   descripcion: string;
+  direccion: string;
   estado: 'PENDIENTE' | 'COTIZADA' | 'APROBADA' | 'RECHAZADA' | 'CANCELADA';
-  fechaCreacion: string;
+  creadoEn: string;
+  actualizadoEn: string;
 }
 
 export interface Cotizacion {
   id: number;
   solicitudId: number;
+  descripcion: string;
   monto: number;
-  detalles: string;
+  validoHasta: string;
   estado: 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
-  fechaCreacion: string;
+  creadoEn: string;
+  actualizadoEn: string;
 }
 
 export interface Orden {
   id: number;
+  solicitudId: number;
   cotizacionId: number;
+  descripcion: string;
+  fechaProgramada?: string;
   tecnicoAsignado?: Usuario;
   estado: 'ASIGNADA' | 'EN_PROGRESO' | 'COMPLETADA' | 'CANCELADA';
-  evidencias: string;
-  notasTecnicas: string;
-  fechaCreacion: string;
+  completadoEn?: string;
+  creadoEn: string;
+  actualizadoEn: string;
 }
 
 export interface Auditoria {
