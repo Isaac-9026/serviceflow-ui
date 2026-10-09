@@ -30,3 +30,32 @@ export interface Solicitud {
   estado: 'PENDIENTE' | 'COTIZADA' | 'APROBADA' | 'RECHAZADA' | 'CANCELADA';
   fechaCreacion: string;
 }
+
+export interface Cotizacion {
+  id: number;
+  solicitudId: number;
+  monto: number;
+  detalles: string;
+  estado: 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
+  fechaCreacion: string;
+}
+
+export interface Orden {
+  id: number;
+  cotizacionId: number;
+  tecnicoAsignado?: Usuario;
+  estado: 'ASIGNADA' | 'EN_PROGRESO' | 'COMPLETADA' | 'CANCELADA';
+  evidencias: string;
+  notasTecnicas: string;
+  fechaCreacion: string;
+}
+
+export interface Auditoria {
+  id: string;
+  tipoEntidad: string;
+  entidadId: string;
+  accion: string;
+  cambios: string;
+  usuario: string;
+  timestamp: string;
+}
