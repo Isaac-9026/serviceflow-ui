@@ -19,8 +19,10 @@ export interface Cliente {
 export interface Categoria {
   id: number;
   nombre: string;
-  descripcion: string;
+  activo: boolean;
 }
+
+export type EstadoSolicitud = 'RECIBIDA' | 'COTIZADA' | 'EN_PROGRESO' | 'COMPLETADA' | 'CANCELADA';
 
 export interface Solicitud {
   id: number;
@@ -30,10 +32,12 @@ export interface Solicitud {
   categoriaNombre: string;
   descripcion: string;
   direccion: string;
-  estado: 'PENDIENTE' | 'COTIZADA' | 'APROBADA' | 'RECHAZADA' | 'CANCELADA';
+  estado: EstadoSolicitud;
   creadoEn: string;
   actualizadoEn: string;
 }
+
+export type EstadoCotizacion = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA' | 'CANCELADA';
 
 export interface Cotizacion {
   id: number;
@@ -41,19 +45,23 @@ export interface Cotizacion {
   descripcion: string;
   monto: number;
   validoHasta: string;
-  estado: 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
+  estado: EstadoCotizacion;
   creadoEn: string;
   actualizadoEn: string;
 }
 
+export type EstadoOrden = 'CREADA' | 'EN_PROGRESO' | 'PENDIENTE_VERIFICACION' | 'COMPLETADA' | 'CANCELADA';
+
+export type TipoEvidencia = 'FOTO' | 'NOTA';
+
 export interface Orden {
   id: number;
   solicitudId: number;
-  cotizacionId: number;
+  cotizacionId?: number | null;
   descripcion: string;
   fechaProgramada?: string;
   tecnicoAsignado?: Usuario;
-  estado: 'ASIGNADA' | 'EN_PROGRESO' | 'COMPLETADA' | 'CANCELADA';
+  estado: EstadoOrden;
   completadoEn?: string;
   creadoEn: string;
   actualizadoEn: string;

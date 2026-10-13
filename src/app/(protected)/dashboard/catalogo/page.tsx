@@ -31,15 +31,17 @@ export default function CatalogoPage() {
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
-  const [formData, setFormData] = useState({ nombre: "", descripcion: "" });
+  const [formData, setFormData] = useState({ nombre: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchCategorias = async () => {
     try {
       const res = await api.get<Categoria[]>("/categorias");
       setCategorias(res.data);
-    } catch (error) {
-      toast.error("Error al cargar las categorías");
+    } catch (error: any) {
+      if (error.response?.status !== 401) {
+        toast.error("Error al cargar las categorías");
+      }
     } finally {
       setLoading(false);
     }
@@ -50,7 +52,7 @@ export default function CatalogoPage() {
   }, []);
 
   const openCreateDialog = () => {
-    setFormData({ nombre: "", descripcion: "" });
+    setFormData({ nombre: "" });
     setIsDialogOpen(true);
   };
 
@@ -58,7 +60,7 @@ export default function CatalogoPage() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await api.post("/categorias", formData);
+      await api.post("/categorias", { nombre: formData.nombre });
       toast.success("Categoría de servicio creada");
       setIsDialogOpen(false);
       fetchCategorias();
@@ -89,27 +91,18 @@ export default function CatalogoPage() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 pt-4">
               <div className="space-y-2">
-                <Label htmlFor="nombre">Nombre de la Categoría</Label>
+                <Label htmlFor="nombre">Nombre de la Categoría *</Label>
                 <Input 
                   id="nombre" 
-                  placeholder="Ej. Mantenimiento Preventivo"
+                  placeholder="Ej. Plomería General, Electricidad..."
                   value={formData.nombre} 
-                  onChange={e => setFormData({...formData, nombre: e.target.value})} 
-                  required 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="descripcion">Descripción</Label>
-                <Input 
-                  id="descripcion" 
-                  value={formData.descripcion} 
-                  onChange={e => setFormData({...formData, descripcion: e.target.value})} 
+                  onChange={e => setFormData({ nombre: e.target.value })} 
                   required 
                 />
               </div>
               
               <div className="flex justify-end pt-4">
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" disabled={isSubmitting || !formData.nombre}>
                   {isSubmitting ? "Guardando..." : "Guardar"}
                 </Button>
               </div>
@@ -123,8 +116,8 @@ export default function CatalogoPage() {
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
               <TableHead className="w-[100px]">ID</TableHead>
-              <TableHead>Categoría / Servicio</TableHead>
-              <TableHead>Descripción</TableHead>
+              <TableHead>Categoría / Tipo de Servicio</TableHead>
+              <TableHead className="text-right">Estado</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -133,13 +126,13 @@ export default function CatalogoPage() {
                 <TableRow key={i}>
                   <TableCell><Skeleton className="h-4 w-8" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-48" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-full" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
                 </TableRow>
               ))
             ) : categorias.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
-                  El catálogo está vacío.
+                  El catálogo está vacío. Haz clic en "Nueva Categoría" para comenzar.
                 </TableCell>
               </TableRow>
             ) : (
@@ -147,7 +140,11 @@ export default function CatalogoPage() {
                 <TableRow key={c.id} className="group transition-colors">
                   <TableCell className="font-medium text-muted-foreground">#{c.id}</TableCell>
                   <TableCell className="font-medium">{c.nombre}</TableCell>
-                  <TableCell className="text-muted-foreground">{c.descripcion}</TableCell>
+                  <TableCell className="text-right">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                      Activo
+                    </span>
+                  </TableCell>
                 </TableRow>
               ))
             )}

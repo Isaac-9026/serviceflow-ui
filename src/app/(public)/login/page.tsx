@@ -76,11 +76,11 @@ export default function LoginPage() {
         <form onSubmit={handleLogin} className="space-y-6">
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Usuario</Label>
+              <Label htmlFor="email">Correo Electrónico</Label>
               <Input
-                id="username"
-                type="text"
-                placeholder="ej. admin"
+                id="email"
+                type="email"
+                placeholder="admin@serviceflow.com"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
@@ -95,7 +95,7 @@ export default function LoginPage() {
               <Input
                 id="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder="password123"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -103,6 +103,25 @@ export default function LoginPage() {
                 className="transition-colors focus-visible:ring-1"
               />
             </div>
+          </div>
+
+          <div className="rounded-lg bg-muted/60 p-3 text-xs text-muted-foreground flex items-center justify-between border border-border/50">
+            <div>
+              <span className="font-semibold block text-foreground">Credenciales Semilla:</span>
+              <span>admin@serviceflow.com / password123</span>
+            </div>
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="sm" 
+              className="h-7 text-xs"
+              onClick={() => {
+                setUsername("admin@serviceflow.com");
+                setPassword("password123");
+              }}
+            >
+              Autocompletar
+            </Button>
           </div>
 
           <motion.div whileTap={isLoading ? undefined : { scale: 0.96 }}>

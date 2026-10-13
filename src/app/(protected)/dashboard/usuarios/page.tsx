@@ -47,8 +47,10 @@ export default function UsuariosPage() {
     try {
       const res = await api.get<Usuario[]>("/usuarios");
       setUsuarios(res.data);
-    } catch (error) {
-      toast.error("Error al cargar los usuarios");
+    } catch (error: any) {
+      if (error.response?.status !== 401) {
+        toast.error("Error al cargar los usuarios");
+      }
     } finally {
       setLoading(false);
     }

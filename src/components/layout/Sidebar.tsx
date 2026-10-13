@@ -10,17 +10,19 @@ import {
   Settings, 
   ClipboardList,
   Wrench,
-  FileText
+  FileText,
+  FileCheck
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 
 const adminLinks = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/dashboard/usuarios", label: "Usuarios", icon: Users },
+  { href: "/dashboard/solicitudes", label: "Solicitudes", icon: FileText },
+  { href: "/dashboard/cotizaciones", label: "Cotizaciones", icon: FileCheck },
+  { href: "/dashboard/ordenes", label: "Órdenes de Trabajo", icon: ClipboardList },
   { href: "/dashboard/clientes", label: "Clientes", icon: Briefcase },
   { href: "/dashboard/catalogo", label: "Catálogo", icon: Wrench },
-  { href: "/dashboard/solicitudes", label: "Solicitudes", icon: FileText },
-  { href: "/dashboard/ordenes", label: "Órdenes de Trabajo", icon: ClipboardList },
+  { href: "/dashboard/usuarios", label: "Usuarios", icon: Users },
   { href: "/dashboard/auditoria", label: "Auditoría", icon: Settings },
 ];
 

@@ -10,7 +10,7 @@ const api = axios.create({
 // Interceptor para añadir el JWT en cada request
 api.interceptors.request.use(
   (config) => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && !config.url?.includes('/auth/login')) {
       const token = localStorage.getItem('token');
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -25,9 +25,11 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
-      // Ignorar el redirect si el 401 viene del intento de login
-      if (error.config.url !== '/auth/login' && typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && error.response) {
+      const isAuthUrl = error.config?.url?.includes('/auth/login');
+      
+      // Si la sesión expiró o el token es inválido (401), limpiar y redirigir
+      if (error.response.status === 401 && !isAuthUrl) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         window.location.href = '/login';

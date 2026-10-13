@@ -40,8 +40,10 @@ export default function ClientesPage() {
     try {
       const res = await api.get<Cliente[]>("/clientes");
       setClientes(res.data);
-    } catch (error) {
-      toast.error("Error al cargar los clientes");
+    } catch (error: any) {
+      if (error.response?.status !== 401) {
+        toast.error("Error al cargar los clientes");
+      }
     } finally {
       setLoading(false);
     }
