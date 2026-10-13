@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Search, Activity } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Search, Activity, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/axios";
 import { Auditoria } from "@/types/backend";
@@ -31,19 +31,39 @@ export default function AuditoriaPage() {
   const [logs, setLogs] = useState<Auditoria[]>([]);
   const [loading, setLoading] = useState(false);
   
-  const [tipoEntidad, setTipoEntidad] = useState("USUARIO");
+  const [tipoEntidad, setTipoEntidad] = useState("ORDEN");
   const [entidadId, setEntidadId] = useState("");
+
+  const cargarTodos = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get<Auditoria[]>("/auditoria");
+      setLogs(res.data);
+    } catch (error) {
+      toast.error("Error al cargar registros de auditoría");
+      setLogs([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    cargarTodos();
+  }, []);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!entidadId) return;
+    if (!entidadId.trim()) {
+      cargarTodos();
+      return;
+    }
 
     try {
       setLoading(true);
-      const res = await api.get<Auditoria[]>(`/auditoria/${tipoEntidad}/${entidadId}`);
+      const res = await api.get<Auditoria[]>(`/auditoria/${tipoEntidad}/${entidadId.trim()}`);
       setLogs(res.data);
       if (res.data.length === 0) {
-        toast.info("No se encontraron registros para esta entidad.");
+        toast.info(`No se encontraron registros para ${tipoEntidad} #${entidadId}`);
       }
     } catch (error) {
       toast.error("Error al buscar registros de auditoría");
@@ -53,15 +73,23 @@ export default function AuditoriaPage() {
     }
   };
 
+  const handleReset = () => {
+    setEntidadId("");
+    cargarTodos();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Auditoría del Sistema</h1>
           <p className="text-muted-foreground text-sm">
-            Rastrea los cambios históricos de las entidades en la base de datos (MongoDB).
+            Trazabilidad histórica y eventos del ciclo operativo (ADR-004).
           </p>
         </div>
+        <Button variant="outline" size="sm" onClick={cargarTodos} disabled={loading} className="gap-2">
+          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar
+        </Button>
       </div>
 
       {/* Buscador */}
@@ -74,26 +102,33 @@ export default function AuditoriaPage() {
                 <SelectValue placeholder="Tipo" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="USUARIO">Usuario</SelectItem>
-                <SelectItem value="CLIENTE">Cliente</SelectItem>
                 <SelectItem value="SOLICITUD">Solicitud</SelectItem>
-                <SelectItem value="ORDEN">Orden</SelectItem>
+                <SelectItem value="COTIZACION">Cotización</SelectItem>
+                <SelectItem value="ORDEN">Orden de Trabajo</SelectItem>
+                <SelectItem value="CLIENTE">Cliente</SelectItem>
+                <SelectItem value="USUARIO">Usuario</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2 w-full sm:w-[300px]">
+          <div className="space-y-2 w-full sm:w-[280px]">
             <Label htmlFor="id">ID de la Entidad (Numérico)</Label>
             <Input 
               id="id" 
-              placeholder="Ej. 1"
+              placeholder="Ej. 1 (dejar vacío para ver todos)"
               value={entidadId} 
               onChange={e => setEntidadId(e.target.value)} 
-              required 
             />
           </div>
-          <Button type="submit" disabled={loading || !entidadId} className="w-full sm:w-auto gap-2">
-            <Search className="h-4 w-4" /> Buscar Logs
-          </Button>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button type="submit" disabled={loading} className="gap-2">
+              <Search className="h-4 w-4" /> Filtrar
+            </Button>
+            {entidadId && (
+              <Button type="button" variant="outline" onClick={handleReset} disabled={loading}>
+                Limpiar
+              </Button>
+            )}
+          </div>
         </form>
       </div>
 
@@ -102,45 +137,54 @@ export default function AuditoriaPage() {
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
-              <TableHead>Fecha / Hora</TableHead>
-              <TableHead>Acción</TableHead>
-              <TableHead>Usuario Autor</TableHead>
-              <TableHead>Detalle de Cambios</TableHead>
+              <TableHead className="w-[180px]">Fecha / Hora</TableHead>
+              <TableHead className="w-[150px]">Entidad</TableHead>
+              <TableHead className="w-[180px]">Acción</TableHead>
+              <TableHead className="w-[200px]">Usuario Autor</TableHead>
+              <TableHead>Detalle de Evento</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              Array.from({ length: 3 }).map((_, i) => (
+              Array.from({ length: 4 }).map((_, i) => (
                 <TableRow key={i}>
                   <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-32" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-64" /></TableCell>
                 </TableRow>
               ))
             ) : logs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="h-48 text-center text-muted-foreground">
+                <TableCell colSpan={5} className="h-48 text-center text-muted-foreground">
                   <div className="flex flex-col items-center justify-center space-y-3">
                     <Activity className="h-8 w-8 text-muted-foreground/50" />
-                    <p>Realiza una búsqueda para ver el historial.</p>
+                    <p>No hay eventos de auditoría registrados para el criterio seleccionado.</p>
                   </div>
                 </TableCell>
               </TableRow>
             ) : (
               logs.map((log) => (
                 <TableRow key={log.id} className="group transition-colors">
-                  <TableCell className="text-muted-foreground">
-                    {new Date(log.timestamp).toLocaleString()}
+                  <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
+                    {new Date(log.creadoEn).toLocaleString()}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 uppercase">
+                    <Badge variant="outline" className="font-mono text-xs">
+                      {log.tipoEntidad} #{log.entidadId}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="secondary" className="font-medium text-xs">
                       {log.accion}
                     </Badge>
                   </TableCell>
-                  <TableCell className="font-medium">{log.usuario}</TableCell>
-                  <TableCell className="max-w-[400px] text-xs font-mono text-muted-foreground break-all">
-                    {log.cambios}
+                  <TableCell className="text-sm font-medium">
+                    {log.usuarioNombre || log.usuarioEmail || "Sistema"}
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {log.detalles}
                   </TableCell>
                 </TableRow>
               ))

@@ -54,6 +54,15 @@ export type EstadoOrden = 'CREADA' | 'EN_PROGRESO' | 'PENDIENTE_VERIFICACION' | 
 
 export type TipoEvidencia = 'FOTO' | 'NOTA';
 
+export interface Evidencia {
+  id: number;
+  ordenId: number;
+  tipo: TipoEvidencia;
+  rutaArchivo?: string;
+  nota: string;
+  creadoEn: string;
+}
+
 export interface Orden {
   id: number;
   solicitudId: number;
@@ -68,11 +77,13 @@ export interface Orden {
 }
 
 export interface Auditoria {
-  id: string;
-  tipoEntidad: string;
-  entidadId: string;
+  id: number;
+  usuarioId?: number | null;
+  usuarioNombre?: string | null;
+  usuarioEmail?: string | null;
   accion: string;
-  cambios: string;
-  usuario: string;
-  timestamp: string;
+  tipoEntidad: string;
+  entidadId: number;
+  detalles: string;
+  creadoEn: string;
 }
