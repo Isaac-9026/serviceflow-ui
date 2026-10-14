@@ -107,7 +107,7 @@ export function Sidebar() {
       </div>
 
       {/* Navigation Groups */}
-      <nav className="flex-1 space-y-4 overflow-y-auto pr-1">
+      <nav className="flex-1 space-y-4 overflow-y-auto overscroll-contain pr-1">
         {navGroups.map((group) => (
           <div key={group.title} className="space-y-1">
             <div className="px-3 pt-2 pb-1 text-[10px] font-bold tracking-wider text-muted-foreground/70 uppercase">
@@ -120,8 +120,8 @@ export function Sidebar() {
               return (
                 <Link key={item.href} href={item.href}>
                   <motion.div
-                    whileTap={{ scale: 0.98 }}
-                    className={`relative flex items-center justify-between rounded-lg px-3 py-2 text-xs font-medium transition-all ${
+                    whileTap={{ scale: 0.96 }}
+                    className={`relative flex items-center justify-between rounded-lg px-3 py-2 text-xs font-medium transition-[color,background-color,box-shadow] duration-150 ease-out ${
                       isActive 
                         ? "text-primary font-semibold bg-primary/10 shadow-xs" 
                         : "text-sidebar-foreground/75 hover:text-sidebar-foreground hover:bg-sidebar-accent/60"
@@ -147,7 +147,8 @@ export function Sidebar() {
       {/* User Footer Card */}
       {user && (
         <div className="mt-auto border-t border-sidebar-border pt-3 px-1 space-y-2">
-          <div className="flex items-center gap-2.5 p-2 rounded-xl bg-sidebar-accent/40 border border-sidebar-border/50">
+          {/* Concentric border radius: inner rounded-lg (8px) + p-2 (8px padding) = outer rounded-2xl (16px) */}
+          <div className="flex items-center gap-2.5 p-2 rounded-2xl bg-sidebar-accent/40 border border-sidebar-border/50">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary font-bold text-xs shrink-0">
               {user.nombre ? user.nombre.substring(0, 2).toUpperCase() : "U"}
             </div>
@@ -163,7 +164,7 @@ export function Sidebar() {
 
           <button
             onClick={handleLogout}
-            className="flex w-full items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors cursor-pointer border border-transparent hover:border-destructive/20"
+            className="flex w-full items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 transition-[color,background-color,border-color,transform] duration-150 ease-out motion-safe:enabled:active:scale-[0.96] cursor-pointer border border-transparent hover:border-destructive/20"
             title="Cerrar sesión en ServiceFlow"
           >
             <LogOut className="h-3.5 w-3.5" />

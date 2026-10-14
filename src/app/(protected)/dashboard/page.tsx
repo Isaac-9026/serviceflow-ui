@@ -24,6 +24,27 @@ import { Solicitud, Cotizacion, Orden, Auditoria } from "@/types/backend";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { motion, type Variants } from "framer-motion";
+
+const staggerContainer: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const staggerItem: Variants = {
+  hidden: { opacity: 0, y: 12, filter: "blur(4px)" },
+  visible: {
+    opacity: 1,
+    y: 0,
+    filter: "blur(0px)",
+    transition: { duration: 0.3, ease: "easeOut" },
+  },
+};
 
 export default function DashboardPage() {
   const user = useAuthStore((state) => state.user);
@@ -71,9 +92,14 @@ export default function DashboardPage() {
   const isTecnico = user?.rol === "TECNICO";
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+    <motion.div 
+      initial="hidden" 
+      animate="visible" 
+      variants={staggerContainer} 
+      className="space-y-8 max-w-7xl mx-auto"
+    >
       {/* Encabezado Principal */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border/60">
+      <motion.div variants={staggerItem} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border/60">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
             Centro de Control Operativo
@@ -99,11 +125,11 @@ export default function DashboardPage() {
             </Link>
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* PIPELINE DEL CICLO DE SERVICIO (Modo Operación) */}
       {!isTecnico ? (
-        <section className="space-y-3">
+        <motion.section variants={staggerItem} className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Pipeline de Servicios en Curso
@@ -202,10 +228,10 @@ export default function DashboardPage() {
               </div>
             </Link>
           </div>
-        </section>
+        </motion.section>
       ) : (
         /* VISTA ESPECÍFICA PARA EL TÉCNICO EN CAMPO */
-        <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <motion.section variants={staggerItem} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="p-5 rounded-xl border border-border bg-card shadow-xs">
             <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
               <span className="font-semibold text-foreground">Órdenes Activas</span>
@@ -241,11 +267,11 @@ export default function DashboardPage() {
             </div>
             <p className="text-xs text-muted-foreground mt-1">Trabajos de campo aprobados</p>
           </div>
-        </section>
+        </motion.section>
       )}
 
       {/* BLOQUE CENTRAL: TAREAS URGENTES Y STREAM DE AUDITORÍA EN VIVO */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <motion.div variants={staggerItem} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Columna Izquierda: Alertas de Atención Operativa */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
@@ -386,7 +412,7 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

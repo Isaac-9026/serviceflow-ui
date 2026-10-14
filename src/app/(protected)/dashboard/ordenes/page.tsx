@@ -639,7 +639,7 @@ export default function OrdenesPage() {
                 {previewUrl && (
                   <div className="mt-2 relative rounded-lg border border-border overflow-hidden bg-muted max-h-48 flex items-center justify-center">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={previewUrl} alt="Vista previa" className="max-h-48 w-auto object-contain" />
+                    <img src={previewUrl} alt="Vista previa" className="max-h-48 w-auto object-contain outline outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10 rounded-md" />
                   </div>
                 )}
               </div>
@@ -670,7 +670,7 @@ export default function OrdenesPage() {
 
       {/* DIALOG: FICHA TÉCNICA / DETALLE DE LA ORDEN CON GALERÍA DE EVIDENCIAS */}
       <Dialog open={isDetalleOpen} onOpenChange={setIsDetalleOpen}>
-        <DialogContent className="sm:max-w-[650px] max-h-[85vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[650px] max-h-[85vh] overflow-y-auto overscroll-contain">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-primary" /> Ficha Técnica: Orden #{ordenDetalle?.id}
@@ -733,7 +733,7 @@ export default function OrdenesPage() {
                             <img 
                               src={`${backendBaseUrl}/uploads/${ev.rutaArchivo}`} 
                               alt="Evidencia" 
-                              className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
+                              className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-150 ease-out outline outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10"
                               onClick={() => window.open(`${backendBaseUrl}/uploads/${ev.rutaArchivo}`, "_blank")}
                               title="Clic para ver en tamaño completo"
                             />
