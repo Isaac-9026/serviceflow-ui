@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Plus, Ban, FileText, Calculator, Wrench, ArrowRight } from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
+import { Plus, Ban, Eye, Calculator, Wrench, ArrowRight, Search, FileText, MapPin, Phone, Building2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import api from "@/lib/axios";
@@ -42,6 +42,10 @@ export default function SolicitudesPage() {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Filtros
+  const [searchQuery, setSearchQuery] = useState("");
+  const [estadoFilter, setEstadoFilter] = useState("TODAS");
+
   // Nueva Solicitud
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [createFormData, setCreateFormData] = useState({ 
@@ -51,6 +55,10 @@ export default function SolicitudesPage() {
     direccion: "" 
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Ver Detalle
+  const [isDetalleOpen, setIsDetalleOpen] = useState(false);
+  const [selectedDetalle, setSelectedDetalle] = useState<Solicitud | null>(null);
 
   // Generar Cotización
   const [isCotizarOpen, setIsCotizarOpen] = useState(false);
@@ -64,6 +72,11 @@ export default function SolicitudesPage() {
   // Generar Orden Directa (sin cotización)
   const [isOrdenDirectaOpen, setIsOrdenDirectaOpen] = useState(false);
   const [ordenDescripcion, setOrdenDescripcion] = useState("");
+
+  // Cancelar Solicitud con Motivo
+  const [isCancelarOpen, setIsCancelarOpen] = useState(false);
+  const [solicitudACancelar, setSolicitudACancelar] = useState<Solicitud | null>(null);
+  const [motivoCancelacion, setMotivoCancelacion] = useState("");
 
   const fetchData = async () => {
     try {
@@ -88,6 +101,21 @@ export default function SolicitudesPage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const filteredSolicitudes = useMemo(() => {
+    return solicitudes.filter((s) => {
+      const q = searchQuery.toLowerCase().trim();
+      const matchesSearch =
+        q === "" ||
+        s.clienteNombre.toLowerCase().includes(q) ||
+        (s.categoriaNombre && s.categoriaNombre.toLowerCase().includes(q)) ||
+        s.descripcion.toLowerCase().includes(q) ||
+        (s.direccion && s.direccion.toLowerCase().includes(q));
+
+      const matchesEstado = estadoFilter === "TODAS" || s.estado === estadoFilter;
+      return matchesSearch && matchesEstado;
+    });
+  }, [solicitudes, searchQuery, estadoFilter]);
 
   const openCreateDialog = () => {
     setCreateFormData({ clienteId: "", categoriaId: "", descripcion: "", direccion: "" });
@@ -114,10 +142,14 @@ export default function SolicitudesPage() {
     }
   };
 
+  const openDetalle = (solicitud: Solicitud) => {
+    setSelectedDetalle(solicitud);
+    setIsDetalleOpen(true);
+  };
+
   // Abrir Modal de Cotizar
   const openCotizarDialog = (solicitud: Solicitud) => {
     setSelectedSolicitud(solicitud);
-    // Establecer fecha por defecto: 15 días en el futuro
     const defaultValidez = new Date();
     defaultValidez.setDate(defaultValidez.getDate() + 15);
     const dateStr = defaultValidez.toISOString().split("T")[0];
@@ -177,14 +209,24 @@ export default function SolicitudesPage() {
     }
   };
 
-  const handleCancelar = async (id: number) => {
-    if (!confirm("¿Seguro que deseas cancelar esta solicitud?")) return;
+  const openCancelarDialog = (solicitud: Solicitud) => {
+    setSolicitudACancelar(solicitud);
+    setMotivoCancelacion("");
+    setIsCancelarOpen(true);
+  };
+
+  const handleConfirmarCancelar = async () => {
+    if (!solicitudACancelar) return;
+    setIsSubmitting(true);
     try {
-      await api.patch(`/solicitudes/${id}/cancelar`);
+      await api.patch(`/solicitudes/${solicitudACancelar.id}/cancelar?motivo=${encodeURIComponent(motivoCancelacion)}`);
       toast.success("Solicitud cancelada correctamente");
+      setIsCancelarOpen(false);
       fetchData();
     } catch (error) {
       toast.error("No se pudo cancelar la solicitud");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -199,13 +241,30 @@ export default function SolicitudesPage() {
     }
   };
 
+  const getEstadoBadgeClass = (estado: string) => {
+    switch (estado) {
+      case "RECIBIDA":
+        return "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/30";
+      case "COTIZADA":
+        return "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/30";
+      case "EN_PROGRESO":
+        return "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30";
+      case "COMPLETADA":
+        return "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/30";
+      case "CANCELADA":
+        return "bg-destructive/10 text-destructive border-destructive/30";
+      default:
+        return "";
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Gestión de Solicitudes</h1>
           <p className="text-muted-foreground text-sm">
-            Recibe peticiones, decide si requieren cotización o genera una orden de trabajo directa.
+            Recibe peticiones, decide si requieren cotización previa o genera una orden de trabajo directa.
           </p>
         </div>
 
@@ -214,59 +273,111 @@ export default function SolicitudesPage() {
         </Button>
       </div>
 
+      {/* Buscador y Filtro por Estado */}
+      <div className="flex flex-col sm:flex-row items-center gap-3">
+        <div className="relative w-full sm:max-w-xs">
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por cliente, descripción..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 h-9"
+          />
+        </div>
+        <div className="w-full sm:w-[200px]">
+          <Select value={estadoFilter} onValueChange={(val) => setEstadoFilter(val || "TODAS")}>
+            <SelectTrigger className="h-9">
+              <SelectValue placeholder="Estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="TODAS">Todos los estados</SelectItem>
+              <SelectItem value="RECIBIDA">Recibida</SelectItem>
+              <SelectItem value="COTIZADA">Cotizada</SelectItem>
+              <SelectItem value="EN_PROGRESO">En Progreso</SelectItem>
+              <SelectItem value="COMPLETADA">Completada</SelectItem>
+              <SelectItem value="CANCELADA">Cancelada</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {(searchQuery || estadoFilter !== "TODAS") && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSearchQuery("");
+              setEstadoFilter("TODAS");
+            }}
+            className="h-9"
+          >
+            Limpiar filtros
+          </Button>
+        )}
+      </div>
+
+      {/* Tabla de Solicitudes */}
       <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
               <TableHead className="w-[80px]">ID</TableHead>
-              <TableHead>Fecha</TableHead>
+              <TableHead className="w-[110px]">Fecha</TableHead>
               <TableHead>Cliente</TableHead>
-              <TableHead>Categoría / Servicio</TableHead>
+              <TableHead>Categoría</TableHead>
               <TableHead>Descripción</TableHead>
-              <TableHead>Estado</TableHead>
+              <TableHead className="w-[130px]">Estado</TableHead>
               <TableHead className="text-right">Acciones de Flujo</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              Array.from({ length: 3 }).map((_, i) => (
+              Array.from({ length: 4 }).map((_, i) => (
                 <TableRow key={i}>
                   <TableCell><Skeleton className="h-4 w-8" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-32" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-32" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-40" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                   <TableCell><Skeleton className="h-8 w-24 ml-auto" /></TableCell>
                 </TableRow>
               ))
-            ) : solicitudes.length === 0 ? (
+            ) : filteredSolicitudes.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                  No hay solicitudes registradas. Haz clic en "Nueva Solicitud" para iniciar el flujo.
+                <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
+                  No hay solicitudes que coincidan con los filtros seleccionados.
                 </TableCell>
               </TableRow>
             ) : (
-              solicitudes.map((s) => (
-                <TableRow key={s.id} className="group transition-colors">
-                  <TableCell className="font-medium text-muted-foreground">#{s.id}</TableCell>
-                  <TableCell className="text-muted-foreground">
+              filteredSolicitudes.map((s) => (
+                <TableRow key={s.id} className="hover:bg-muted/30 transition-colors">
+                  <TableCell className="font-mono text-xs text-muted-foreground">#{s.id}</TableCell>
+                  <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
                     {new Date(s.creadoEn).toLocaleDateString()}
                   </TableCell>
-                  <TableCell className="font-medium">{s.clienteNombre}</TableCell>
-                  <TableCell>{s.categoriaNombre || "General"}</TableCell>
-                  <TableCell className="max-w-[200px] truncate" title={s.descripcion}>
+                  <TableCell className="font-semibold text-foreground">{s.clienteNombre}</TableCell>
+                  <TableCell className="text-sm">{s.categoriaNombre || "General"}</TableCell>
+                  <TableCell className="max-w-[200px] truncate text-sm" title={s.descripcion}>
                     {s.descripcion}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={getBadgeVariant(s.estado)}>
+                    <Badge variant="outline" className={getEstadoBadgeClass(s.estado)}>
                       {s.estado}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end items-center gap-2">
-                      {/* FLUJO SI ES RECIBIDA: Puede cotizarse o enviarse a orden directa */}
-                      {s.estado === 'RECIBIDA' && (
+                    <div className="flex justify-end items-center gap-1.5">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
+                        onClick={() => openDetalle(s)}
+                        title="Ver detalle completo"
+                      >
+                        <Eye className="h-3.5 w-3.5" /> Detalle
+                      </Button>
+
+                      {/* SI ES RECIBIDA: Puede cotizarse o enviarse a orden directa */}
+                      {s.estado === "RECIBIDA" && (
                         <>
                           <Button 
                             variant="secondary" 
@@ -283,7 +394,7 @@ export default function SolicitudesPage() {
                             size="sm" 
                             className="gap-1.5 h-8 text-xs font-semibold"
                             onClick={() => openOrdenDirectaDialog(s)}
-                            title="Generar Orden de Trabajo directa (sin cotización previa)"
+                            title="Generar Orden de Trabajo directa (sin cotización)"
                           >
                             <Wrench className="h-3.5 w-3.5" /> Orden Directa
                           </Button>
@@ -292,20 +403,20 @@ export default function SolicitudesPage() {
                             variant="ghost" 
                             size="icon" 
                             className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => handleCancelar(s.id)}
+                            onClick={() => openCancelarDialog(s)}
                             title="Cancelar solicitud"
                           >
-                            <Ban className="h-4 w-4" />
+                            <Ban className="h-3.5 w-3.5" />
                           </Button>
                         </>
                       )}
 
-                      {/* SI ESTÁ COTIZADA: Enlace directo al módulo de cotizaciones */}
-                      {s.estado === 'COTIZADA' && (
+                      {/* SI ESTÁ COTIZADA: Enlace directo a cotizaciones */}
+                      {s.estado === "COTIZADA" && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="gap-1 text-xs text-muted-foreground hover:text-foreground"
+                          className="gap-1 text-xs text-muted-foreground hover:text-foreground h-8"
                           onClick={() => router.push("/dashboard/cotizaciones")}
                         >
                           Ir a Cotizaciones <ArrowRight className="h-3.5 w-3.5" />
@@ -313,19 +424,19 @@ export default function SolicitudesPage() {
                       )}
 
                       {/* SI ESTÁ EN PROGRESO: Enlace directo a órdenes */}
-                      {s.estado === 'EN_PROGRESO' && (
+                      {s.estado === "EN_PROGRESO" && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="gap-1 text-xs text-muted-foreground hover:text-foreground"
+                          className="gap-1 text-xs text-muted-foreground hover:text-foreground h-8"
                           onClick={() => router.push("/dashboard/ordenes")}
                         >
                           Ver en Órdenes <ArrowRight className="h-3.5 w-3.5" />
                         </Button>
                       )}
 
-                      {s.estado === 'COMPLETADA' && (
-                        <span className="text-xs text-green-600 font-medium">Finalizado</span>
+                      {s.estado === "COMPLETADA" && (
+                        <span className="text-xs text-green-600 dark:text-green-400 font-medium px-2">Finalizado</span>
                       )}
                     </div>
                   </TableCell>
@@ -335,6 +446,64 @@ export default function SolicitudesPage() {
           </TableBody>
         </Table>
       </div>
+
+      {/* DIALOG: VER DETALLE DE SOLICITUD */}
+      <Dialog open={isDetalleOpen} onOpenChange={setIsDetalleOpen}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" /> Solicitud #{selectedDetalle?.id}
+            </DialogTitle>
+            <DialogDescription>
+              Ficha descriptiva completa del requerimiento del cliente.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedDetalle && (
+            <div className="space-y-4 pt-2">
+              <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="text-xs font-semibold text-muted-foreground uppercase">Cliente</span>
+                    <p className="text-base font-bold text-foreground">{selectedDetalle.clienteNombre}</p>
+                  </div>
+                  <Badge variant="outline" className={getEstadoBadgeClass(selectedDetalle.estado)}>
+                    {selectedDetalle.estado}
+                  </Badge>
+                </div>
+
+                <div className="text-sm space-y-1.5 pt-1">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Building2 className="h-4 w-4 text-primary" />
+                    <span>Categoría: <strong className="text-foreground">{selectedDetalle.categoriaNombre || "General"}</strong></span>
+                  </div>
+                  {selectedDetalle.direccion && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <MapPin className="h-4 w-4 text-primary" />
+                      <span className="text-foreground">{selectedDetalle.direccion}</span>
+                    </div>
+                  )}
+                  <div className="text-xs text-muted-foreground pt-1">
+                    Registrada el: {new Date(selectedDetalle.creadoEn).toLocaleString()}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <span className="text-xs font-semibold text-muted-foreground uppercase">Descripción del Requerimiento</span>
+                <div className="rounded-md border p-3 text-sm bg-background">
+                  {selectedDetalle.descripcion}
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <Button variant="default" size="sm" onClick={() => setIsDetalleOpen(false)}>
+                  Cerrar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* DIALOG: CREAR SOLICITUD */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
@@ -498,6 +667,38 @@ export default function SolicitudesPage() {
         </DialogContent>
       </Dialog>
 
+      {/* DIALOG: CANCELAR SOLICITUD */}
+      <Dialog open={isCancelarOpen} onOpenChange={setIsCancelarOpen}>
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle className="text-destructive flex items-center gap-2">
+              <Ban className="h-5 w-5" /> Cancelar Solicitud #{solicitudACancelar?.id}
+            </DialogTitle>
+            <DialogDescription>
+              Esta acción marcará la solicitud como CANCELADA y registrará el motivo en la auditoría.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label htmlFor="motivo-cancelar">Motivo de la cancelación (opcional)</Label>
+              <Input
+                id="motivo-cancelar"
+                placeholder="Ej. El cliente desistió del servicio o duplicado"
+                value={motivoCancelacion}
+                onChange={(e) => setMotivoCancelacion(e.target.value)}
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setIsCancelarOpen(false)}>
+                Regresar
+              </Button>
+              <Button variant="destructive" disabled={isSubmitting} onClick={handleConfirmarCancelar}>
+                {isSubmitting ? "Cancelando..." : "Confirmar Cancelación"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

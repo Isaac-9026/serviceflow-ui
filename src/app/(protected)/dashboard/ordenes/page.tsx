@@ -1,7 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle, Users, HardHat, Camera, FileCheck2, Plus, Eye, Image as ImageIcon, FileText } from "lucide-react";
+import { 
+  CheckCircle, 
+  Users, 
+  HardHat, 
+  Camera, 
+  FileCheck2, 
+  Plus, 
+  Eye, 
+  Image as ImageIcon, 
+  FileText, 
+  Search, 
+  Ban, 
+  Filter 
+} from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/axios";
 import { Orden, Usuario, TipoEvidencia, Solicitud, Evidencia } from "@/types/backend";
@@ -26,6 +39,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -42,6 +56,10 @@ export default function OrdenesPage() {
   const [solicitudes, setSolicitudes] = useState<Solicitud[]>([]);
   const [loading, setLoading] = useState(true);
   
+  // Filtros de búsqueda y estado
+  const [searchQuery, setSearchQuery] = useState("");
+  const [estadoFilter, setEstadoFilter] = useState("TODAS");
+
   // Nueva Orden Manual (para Coordinador/Admin)
   const [isCrearOrdenOpen, setIsCrearOrdenOpen] = useState(false);
   const [nuevaOrdenForm, setNuevaOrdenForm] = useState({ solicitudId: "", descripcion: "" });
@@ -63,6 +81,11 @@ export default function OrdenesPage() {
   const [ordenDetalle, setOrdenDetalle] = useState<Orden | null>(null);
   const [evidenciasDetalle, setEvidenciasDetalle] = useState<Evidencia[]>([]);
   const [loadingDetalle, setLoadingDetalle] = useState(false);
+
+  // Cancelar Orden
+  const [isCancelarOpen, setIsCancelarOpen] = useState(false);
+  const [ordenParaCancelar, setOrdenParaCancelar] = useState<Orden | null>(null);
+  const [motivoCancelacion, setMotivoCancelacion] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -218,6 +241,35 @@ export default function OrdenesPage() {
     }
   };
 
+  // Cancelar Orden
+  const openCancelarDialog = (orden: Orden) => {
+    setOrdenParaCancelar(orden);
+    setMotivoCancelacion("");
+    setIsCancelarOpen(true);
+  };
+
+  const handleCancelarSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!ordenParaCancelar) return;
+    setIsSubmitting(true);
+    try {
+      await api.patch(`/ordenes/${ordenParaCancelar.id}/cancelar?motivo=${encodeURIComponent(motivoCancelacion)}`, {
+        motivo: motivoCancelacion
+      });
+      toast.success(`Orden #${ordenParaCancelar.id} cancelada`);
+      setIsCancelarOpen(false);
+      if (isDetalleOpen && ordenDetalle?.id === ordenParaCancelar.id) {
+        setIsDetalleOpen(false);
+      }
+      fetchData();
+    } catch (error: any) {
+      const msg = error.response?.data?.message || "Error al cancelar la orden";
+      toast.error(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const getBadgeVariant = (estado: string) => {
     switch(estado) {
       case 'CREADA': return "secondary";
@@ -240,10 +292,22 @@ export default function OrdenesPage() {
     }
   };
 
-  // Filtrado de vista para técnicos
-  const ordenesFiltradas = user?.rol === "TECNICO" 
-    ? ordenes.filter(o => o.tecnicoAsignado?.id === user.id)
-    : ordenes;
+  // Filtrado de vista por rol técnico y filtros de UI
+  const ordenesFiltradas = ordenes
+    .filter(o => user?.rol === "TECNICO" ? o.tecnicoAsignado?.id === user.id : true)
+    .filter(o => {
+      const matchesSearch = 
+        searchQuery === "" ||
+        o.id.toString().includes(searchQuery) ||
+        o.solicitudId.toString().includes(searchQuery) ||
+        (o.cotizacionId && o.cotizacionId.toString().includes(searchQuery)) ||
+        o.descripcion.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (o.tecnicoAsignado && o.tecnicoAsignado.nombre.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+      const matchesEstado = estadoFilter === "TODAS" || o.estado === estadoFilter;
+
+      return matchesSearch && matchesEstado;
+    });
 
   const backendBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") || "http://localhost:8080";
 
@@ -266,6 +330,45 @@ export default function OrdenesPage() {
         )}
       </div>
 
+      {/* BARRA DE FILTROS Y BÚSQUEDA */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input 
+            placeholder="Buscar por #ID, solicitud, técnico o instrucciones..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 bg-card"
+          />
+        </div>
+        <div className="w-full sm:w-[220px]">
+          <Select value={estadoFilter} onValueChange={(val) => setEstadoFilter(val || "TODAS")}>
+            <SelectTrigger className="bg-card">
+              <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
+              <SelectValue placeholder="Estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="TODAS">Todos los Estados</SelectItem>
+              <SelectItem value="CREADA">Creada (Sin Asignar)</SelectItem>
+              <SelectItem value="EN_PROGRESO">En Progreso</SelectItem>
+              <SelectItem value="PENDIENTE_VERIFICACION">Pendiente Verificación</SelectItem>
+              <SelectItem value="COMPLETADA">Completada</SelectItem>
+              <SelectItem value="CANCELADA">Cancelada</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {(searchQuery || estadoFilter !== "TODAS") && (
+          <Button 
+            variant="ghost" 
+            onClick={() => { setSearchQuery(""); setEstadoFilter("TODAS"); }}
+            className="text-xs text-muted-foreground"
+          >
+            Limpiar filtros
+          </Button>
+        )}
+      </div>
+
+      {/* TABLA PRINCIPAL */}
       <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
@@ -294,13 +397,13 @@ export default function OrdenesPage() {
               <TableRow>
                 <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                   {user?.rol === "TECNICO" 
-                    ? "No tienes órdenes de trabajo asignadas actualmente." 
-                    : "No hay órdenes de trabajo registradas."}
+                    ? "No tienes órdenes de trabajo asignadas con los criterios seleccionados." 
+                    : "No se encontraron órdenes de trabajo registradas."}
                 </TableCell>
               </TableRow>
             ) : (
               ordenesFiltradas.map((o) => (
-                <TableRow key={o.id} className="group transition-colors">
+                <TableRow key={o.id} className="transition-colors">
                   <TableCell className="font-medium text-muted-foreground">#{o.id}</TableCell>
                   <TableCell className="text-muted-foreground">
                     Sol. #{o.solicitudId}
@@ -349,7 +452,7 @@ export default function OrdenesPage() {
                         </Button>
                       )}
 
-                      {/* ACCIÓN 2: Subir Evidencias / Finalizar Trabajo (Para el Técnico si está EN_PROGRESO) */}
+                      {/* ACCIÓN 2: Subir Evidencias / Finalizar Trabajo (Para el Técnico o Admin si está EN_PROGRESO) */}
                       {(user?.rol === "TECNICO" || user?.rol === "ADMIN") && o.estado === 'EN_PROGRESO' && (
                         <Button 
                           variant="default" 
@@ -371,6 +474,19 @@ export default function OrdenesPage() {
                           title="Aprobar el trabajo técnico y cerrar la orden"
                         >
                           <FileCheck2 className="h-3.5 w-3.5" /> Verificar y Cerrar
+                        </Button>
+                      )}
+
+                      {/* ACCIÓN 4: Cancelar Orden (Coordinador/Admin si no está Completada ni Cancelada) */}
+                      {(user?.rol === "ADMIN" || user?.rol === "COORDINADOR") && o.estado !== 'COMPLETADA' && o.estado !== 'CANCELADA' && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                          onClick={() => openCancelarDialog(o)}
+                          title="Cancelar Orden de Trabajo"
+                        >
+                          <Ban className="h-4 w-4" />
                         </Button>
                       )}
 
@@ -640,23 +756,63 @@ export default function OrdenesPage() {
                 )}
               </div>
 
-              {/* Botón de acción para verificar si está pendiente */}
-              {(user?.rol === "ADMIN" || user?.rol === "COORDINADOR") && ordenDetalle.estado === 'PENDIENTE_VERIFICACION' && (
-                <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <span className="font-semibold text-green-700 dark:text-green-400 text-sm block">Revisión Final</span>
-                    <span className="text-xs text-muted-foreground">Las evidencias han sido registradas por el técnico. Puedes aprobar y cerrar la orden.</span>
-                  </div>
+              {/* Botones de acción dentro del detalle */}
+              <div className="flex flex-col sm:flex-row items-center justify-end gap-2 pt-2 border-t">
+                {(user?.rol === "ADMIN" || user?.rol === "COORDINADOR") && ordenDetalle.estado !== 'COMPLETADA' && ordenDetalle.estado !== 'CANCELADA' && (
+                  <Button
+                    variant="outline"
+                    className="text-destructive hover:bg-destructive/10 w-full sm:w-auto"
+                    onClick={() => openCancelarDialog(ordenDetalle)}
+                  >
+                    <Ban className="h-4 w-4 mr-2" /> Cancelar Orden
+                  </Button>
+                )}
+
+                {(user?.rol === "ADMIN" || user?.rol === "COORDINADOR") && ordenDetalle.estado === 'PENDIENTE_VERIFICACION' && (
                   <Button 
-                    className="bg-green-600 hover:bg-green-700 text-white gap-2 shrink-0"
+                    className="bg-green-600 hover:bg-green-700 text-white gap-2 w-full sm:w-auto"
                     onClick={() => handleCompletarOrden(ordenDetalle.id)}
                   >
                     <FileCheck2 className="h-4 w-4" /> Verificar y Cerrar
                   </Button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* DIALOG: CONFIRMAR CANCELACIÓN DE ORDEN */}
+      <Dialog open={isCancelarOpen} onOpenChange={setIsCancelarOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-destructive flex items-center gap-2">
+              <Ban className="h-5 w-5" /> Cancelar Orden de Trabajo
+            </DialogTitle>
+            <DialogDescription>
+              ¿Estás seguro de cancelar la Orden #{ordenParaCancelar?.id}? Esta acción detendrá el trabajo y registrará la cancelación en la auditoría.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCancelarSubmit} className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label htmlFor="motivo-cancelar">Motivo de Cancelación</Label>
+              <Input 
+                id="motivo-cancelar"
+                placeholder="Ej. Solicitud anulada por el cliente / Reprogramación"
+                value={motivoCancelacion}
+                onChange={e => setMotivoCancelacion(e.target.value)}
+                required
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsCancelarOpen(false)}>
+                Atrás
+              </Button>
+              <Button type="submit" variant="destructive" disabled={isSubmitting || !motivoCancelacion}>
+                {isSubmitting ? "Cancelando..." : "Confirmar Cancelación"}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 
