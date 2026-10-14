@@ -27,6 +27,7 @@ import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
   Dialog,
   DialogContent,
@@ -374,6 +375,19 @@ export function Sidebar() {
               <p className="text-[11px] leading-relaxed text-muted-foreground">
                 {roleInfo.desc}
               </p>
+            </div>
+
+            {/* Preferencia de Aspecto Visual (Claro / Oscuro) */}
+            <div className="rounded-xl border border-border/70 bg-card p-3 shadow-xs flex items-center justify-between">
+              <div className="space-y-0.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Tema Visual
+                </span>
+                <p className="text-xs font-semibold text-foreground">
+                  Alternar tema claro y oscuro
+                </p>
+              </div>
+              <ThemeToggle showLabel />
             </div>
 
             {/* Enlace rápido solo para Administradores */}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRight, Calendar, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAuthStore } from "@/store/authStore";
 
 const routeMeta: Record<string, { section: string; title: string }> = {
@@ -63,6 +64,9 @@ export function Topbar() {
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
           <span className="hidden sm:inline">Servicio Activo</span>
         </div>
+
+        {/* Botón de alternancia de tema claro/oscuro */}
+        <ThemeToggle />
 
         {/* Acceso rápido contextual (Solo para Coordinador y Admin cuando no estén ya en solicitudes) */}
         {(user.rol === "ADMIN" || user.rol === "COORDINADOR") && pathname !== "/dashboard/solicitudes" && (
