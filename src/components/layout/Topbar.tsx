@@ -2,16 +2,11 @@
 
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
-import { LogOut, User } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 export function Topbar() {
   const { user, logout } = useAuthStore();
@@ -19,6 +14,7 @@ export function Topbar() {
 
   const handleLogout = () => {
     logout();
+    toast.success("Sesión cerrada correctamente");
     router.push("/login");
   };
 
@@ -26,45 +22,42 @@ export function Topbar() {
 
   return (
     <header className="flex h-16 w-full items-center justify-between border-b border-border bg-background px-6">
-      <div className="flex items-center gap-4">
-        {/* Placeholder for Breadcrumbs or title */}
-        <h2 className="text-lg font-medium text-foreground capitalize">
-          {user.rol.toLowerCase()} Workspace
+      <div className="flex items-center gap-3">
+        <h2 className="text-base font-semibold text-foreground">
+          Workspace
         </h2>
+        <Badge variant="outline" className="capitalize text-xs font-normal">
+          {user.rol.toLowerCase()}
+        </Badge>
       </div>
 
       <div className="flex items-center gap-4">
-        <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center gap-2 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer">
-            <Avatar className="h-9 w-9 border border-border">
-              <AvatarFallback className="bg-primary/10 text-primary">
-                {user.nombre.substring(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel className="font-normal">
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">{user.nombre}</p>
-                <p className="text-xs leading-none text-muted-foreground">
-                  {user.email}
-                </p>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer text-muted-foreground">
-              <User className="mr-2 h-4 w-4" />
-              <span>Perfil</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={handleLogout} 
-              className="cursor-pointer text-destructive focus:text-destructive"
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              <span>Cerrar sesión</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-2.5">
+          <Avatar className="h-8 w-8 border border-border">
+            <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+              {user.nombre ? user.nombre.substring(0, 2).toUpperCase() : "U"}
+            </AvatarFallback>
+          </Avatar>
+          <div className="hidden md:flex flex-col text-left">
+            <span className="text-xs font-semibold text-foreground leading-tight">
+              {user.nombre}
+            </span>
+            <span className="text-[10px] text-muted-foreground leading-tight">
+              {user.email}
+            </span>
+          </div>
+        </div>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleLogout}
+          className="gap-2 text-xs font-medium text-destructive hover:bg-destructive/10 hover:text-destructive border-border"
+          title="Cerrar sesión"
+        >
+          <LogOut className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">Cerrar sesión</span>
+        </Button>
       </div>
     </header>
   );
