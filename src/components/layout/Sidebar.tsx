@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -13,11 +14,27 @@ import {
   FileCheck,
   LogOut,
   ShieldCheck,
-  Layers
+  Layers,
+  Info,
+  User,
+  Mail,
+  Copy,
+  Check,
+  ExternalLink,
+  KeyRound
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import api from "@/lib/axios";
 
 interface NavItem {
   href: string;
@@ -75,6 +92,17 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuthStore();
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [copiedEmail, setCopiedEmail] = useState(false);
+  const [detalleAdmin, setDetalleAdmin] = useState<{ apellido?: string; creadoEn?: string; activo?: boolean } | null>(null);
+
+  useEffect(() => {
+    if (isProfileOpen && user?.rol === "ADMIN") {
+      api.get(`/usuarios/${user.id}`)
+        .then((res) => setDetalleAdmin(res.data))
+        .catch(() => {});
+    }
+  }, [isProfileOpen, user]);
 
   const handleLogout = () => {
     logout();
@@ -82,6 +110,45 @@ export function Sidebar() {
     router.push("/login");
   };
 
+  const handleCopyEmail = () => {
+    if (user?.email) {
+      navigator.clipboard.writeText(user.email);
+      setCopiedEmail(true);
+      toast.success("Correo copiado al portapapeles");
+      setTimeout(() => setCopiedEmail(false), 2000);
+    }
+  };
+
+  const getRoleInfo = (rol?: string) => {
+    switch (rol) {
+      case "ADMIN":
+        return {
+          label: "Administrador del Sistema",
+          desc: "Control total de la plataforma: gestión de personal, catálogo de servicios, aprobación de flujos operativos y auditoría de eventos.",
+          badgeClass: "bg-primary/15 text-primary border-primary/25",
+        };
+      case "COORDINADOR":
+        return {
+          label: "Coordinador de Operaciones",
+          desc: "Gestión del flujo de servicios: recepción de solicitudes, emisión de cotizaciones, asignación de técnicos y validación de órdenes completadas.",
+          badgeClass: "bg-sky-500/15 text-sky-700 dark:text-sky-400 border-sky-500/25",
+        };
+      case "TECNICO":
+        return {
+          label: "Técnico Especialista de Campo",
+          desc: "Ejecución operativa: seguimiento de órdenes asignadas, registro de notas de trabajo y carga de evidencias fotográficas en terreno.",
+          badgeClass: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/25",
+        };
+      default:
+        return {
+          label: rol || "Operador",
+          desc: "Usuario autenticado en la plataforma de servicios.",
+          badgeClass: "bg-muted text-foreground border-border",
+        };
+    }
+  };
+
+  const roleInfo = getRoleInfo(user?.rol);
   const navGroups = user?.rol === "TECNICO" ? techNavGroups : adminNavGroups;
 
   return (
@@ -144,34 +211,215 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* User Footer Card */}
+      {/* User Footer Card & Operator Actions */}
       {user && (
         <div className="mt-auto border-t border-sidebar-border pt-3 px-1 space-y-2">
-          {/* Concentric border radius: inner rounded-lg (8px) + p-2 (8px padding) = outer rounded-2xl (16px) */}
-          <div className="flex items-center gap-2.5 p-2 rounded-2xl bg-sidebar-accent/40 border border-sidebar-border/50">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary font-bold text-xs shrink-0">
+          {/* Tarjeta interactiva de operador: Concentric border radius R_outer (16px) = R_inner (8px) + padding (8px) */}
+          <button
+            type="button"
+            onClick={() => setIsProfileOpen(true)}
+            className="group flex w-full items-center gap-2.5 p-2 rounded-2xl bg-sidebar-accent/40 hover:bg-sidebar-accent/80 border border-sidebar-border/50 hover:border-primary/30 transition-[color,background-color,border-color,transform] duration-150 ease-out motion-safe:enabled:active:scale-[0.98] cursor-pointer text-left"
+            title="Ver información de tu perfil"
+          >
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary font-bold text-xs shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
               {user.nombre ? user.nombre.substring(0, 2).toUpperCase() : "U"}
             </div>
             <div className="flex flex-col min-w-0 flex-1">
               <span className="text-xs font-semibold text-sidebar-foreground truncate" title={user.nombre}>
                 {user.nombre}
               </span>
-              <span className="text-[10px] text-muted-foreground truncate capitalize">
+              <span className="text-[10px] text-muted-foreground truncate capitalize flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
                 {user.rol.toLowerCase()}
               </span>
             </div>
-          </div>
-
-          <button
-            onClick={handleLogout}
-            className="flex w-full items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 transition-[color,background-color,border-color,transform] duration-150 ease-out motion-safe:enabled:active:scale-[0.96] cursor-pointer border border-transparent hover:border-destructive/20"
-            title="Cerrar sesión en ServiceFlow"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            <span>Cerrar sesión</span>
+            <div className="h-6 w-6 rounded-md flex items-center justify-center text-muted-foreground/60 group-hover:text-primary group-hover:bg-primary/10 transition-colors shrink-0">
+              <Info className="h-3.5 w-3.5" />
+            </div>
           </button>
+
+          {/* Acciones directas de cuenta: Ver Perfil y Salir */}
+          <div className="grid grid-cols-2 gap-1.5">
+            <button
+              type="button"
+              onClick={() => setIsProfileOpen(true)}
+              className="flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent/80 border border-sidebar-border/40 hover:border-sidebar-border transition-[color,background-color,border-color,transform] duration-150 ease-out motion-safe:enabled:active:scale-[0.96] cursor-pointer"
+              title="Ver detalles de mi cuenta"
+            >
+              <User className="h-3.5 w-3.5 text-primary" />
+              <span>Mi Perfil</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 border border-transparent hover:border-destructive/20 transition-[color,background-color,border-color,transform] duration-150 ease-out motion-safe:enabled:active:scale-[0.96] cursor-pointer"
+              title="Cerrar sesión en ServiceFlow"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              <span>Salir</span>
+            </button>
+          </div>
         </div>
       )}
+
+      {/* Modal / Dialog de Perfil de Usuario */}
+      <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
+        <DialogContent className="sm:max-w-md overscroll-contain p-0 overflow-hidden border-border/80 shadow-lg">
+          {/* Header estilizado con gradiente */}
+          <div className="bg-linear-to-b from-primary/10 via-primary/5 to-transparent p-6 pb-4 border-b border-border/60">
+            <DialogHeader className="space-y-1 text-left">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-primary uppercase tracking-wider">
+                  Credencial Operativa
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Sesión Activa
+                </span>
+              </div>
+              <DialogTitle className="text-xl font-bold tracking-tight text-foreground">
+                Mi Perfil de Usuario
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground">
+                Información de tu cuenta y privilegios operativos en ServiceFlow.
+              </DialogDescription>
+            </DialogHeader>
+
+            {/* Tarjeta de Identidad */}
+            <div className="mt-4 flex items-center gap-3.5">
+              <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground font-bold text-xl shadow-md shadow-primary/25 shrink-0">
+                {user?.nombre ? user.nombre.substring(0, 2).toUpperCase() : "U"}
+                <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-card p-0.5 flex items-center justify-center">
+                  <span className="h-3 w-3 rounded-full bg-emerald-500" />
+                </div>
+              </div>
+              <div className="flex flex-col min-w-0">
+                <h3 className="text-base font-bold text-foreground truncate">
+                  {user?.nombre} {detalleAdmin?.apellido ? detalleAdmin.apellido : ""}
+                </h3>
+                <div className="mt-1 flex items-center gap-2">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border ${roleInfo.badgeClass}`}>
+                    {roleInfo.label}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Contenido / Detalles */}
+          <div className="p-6 space-y-4 text-xs">
+            {/* Correo Electrónico */}
+            <div className="rounded-xl border border-border/70 bg-card p-3 shadow-xs space-y-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                Correo Electrónico
+              </span>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-foreground font-medium truncate">
+                  <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="truncate">{user?.email}</span>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleCopyEmail}
+                  className="h-7 px-2 text-xs gap-1 shrink-0"
+                  title="Copiar correo al portapapeles"
+                >
+                  {copiedEmail ? (
+                    <>
+                      <Check className="h-3 w-3 text-emerald-600" />
+                      <span className="text-emerald-600 font-semibold">Copiado</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3 w-3 text-muted-foreground" />
+                      <span>Copiar</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {/* Metadatos en Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-xl border border-border/70 bg-card p-3 shadow-xs space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  ID de Operador
+                </span>
+                <div className="flex items-center gap-1.5 text-foreground font-mono font-semibold text-sm">
+                  <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
+                  <span>#{user?.id}</span>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-border/70 bg-card p-3 shadow-xs space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Autenticación
+                </span>
+                <div className="flex items-center gap-1.5 text-foreground font-semibold text-xs truncate">
+                  <KeyRound className="h-4 w-4 text-amber-500 shrink-0" />
+                  <span>JWT Token</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Nivel de Permisos */}
+            <div className="rounded-xl border border-border/70 bg-muted/40 p-3 shadow-xs space-y-1.5">
+              <div className="flex items-center gap-1.5 font-semibold text-foreground text-xs">
+                <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
+                <span>Nivel de Permisos</span>
+              </div>
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                {roleInfo.desc}
+              </p>
+            </div>
+
+            {/* Enlace rápido solo para Administradores */}
+            {user?.rol === "ADMIN" && (
+              <Button
+                variant="outline"
+                className="w-full justify-between h-9 text-xs font-medium border-border/80 hover:bg-primary/5 hover:text-primary"
+                onClick={() => {
+                  setIsProfileOpen(false);
+                  router.push("/dashboard/usuarios");
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-primary" />
+                  <span>Administrar equipo y técnicos</span>
+                </div>
+                <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+              </Button>
+            )}
+          </div>
+
+          {/* Footer de Modal */}
+          <div className="flex items-center justify-between border-t border-border/60 bg-muted/30 px-6 py-3">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="text-xs text-destructive hover:bg-destructive/10 hover:text-destructive gap-1.5"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              <span>Cerrar sesión</span>
+            </Button>
+
+            <Button
+              type="button"
+              variant="default"
+              size="sm"
+              onClick={() => setIsProfileOpen(false)}
+              className="text-xs px-4"
+            >
+              Cerrar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </aside>
   );
 }
