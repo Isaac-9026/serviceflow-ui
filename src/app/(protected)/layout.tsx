@@ -38,9 +38,9 @@ export default function ProtectedLayout({
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
       <Sidebar />
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden bg-background">
         <Topbar />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-6 bg-background">
           {children}
         </main>
       </div>

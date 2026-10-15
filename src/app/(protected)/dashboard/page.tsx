@@ -16,7 +16,9 @@ import {
   ChevronRight,
   TrendingUp,
   Activity,
-  Layers
+  Layers,
+  Users,
+  Wrench
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import api from "@/lib/axios";
@@ -344,19 +346,19 @@ export default function DashboardPage() {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 <Link href="/dashboard/clientes">
                   <div className="p-3 rounded-lg border border-border bg-card hover:bg-muted/40 transition-colors text-xs font-medium flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-primary/70" />
+                    <Users className="h-3.5 w-3.5 text-primary/80 shrink-0" />
                     Directorio Clientes
                   </div>
                 </Link>
                 <Link href="/dashboard/catalogo">
                   <div className="p-3 rounded-lg border border-border bg-card hover:bg-muted/40 transition-colors text-xs font-medium flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-primary/70" />
+                    <Wrench className="h-3.5 w-3.5 text-primary/80 shrink-0" />
                     Catálogo Servicios
                   </div>
                 </Link>
                 <Link href="/dashboard/auditoria">
                   <div className="p-3 rounded-lg border border-border bg-card hover:bg-muted/40 transition-colors text-xs font-medium flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-primary/70" />
+                    <ShieldCheck className="h-3.5 w-3.5 text-primary/80 shrink-0" />
                     Auditoría del Sistema
                   </div>
                 </Link>

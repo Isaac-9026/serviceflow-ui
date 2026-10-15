@@ -59,11 +59,6 @@ export function Topbar() {
           </div>
         )}
 
-        {/* Indicador de estado del sistema */}
-        <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-[11px] font-medium border border-emerald-500/20">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="hidden sm:inline">Servicio Activo</span>
-        </div>
 
         {/* Botón de alternancia de tema claro/oscuro */}
         <ThemeToggle />

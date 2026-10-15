@@ -43,45 +43,45 @@
 }
 
 :root {
-  /* Theme: Slate & Vibrant Indigo Light (Crisp Contrast) */
-  --background: oklch(0.978 0.005 255);
-  --foreground: oklch(0.18 0.02 260);
+  /* Theme: beUI Pure Neutral Light Background (#fcfcfc) */
+  --background: #fcfcfc;
+  --foreground: oklch(0.15 0 0);
   
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.02 260);
+  --card: #ffffff;
+  --card-foreground: oklch(0.15 0 0);
   
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.02 260);
+  --popover: #ffffff;
+  --popover-foreground: oklch(0.15 0 0);
   
   /* Primary: Vibrant Deep Indigo */
   --primary: oklch(0.52 0.22 265);
   --primary-foreground: oklch(0.99 0 0);
   
-  --secondary: oklch(0.955 0.008 260);
-  --secondary-foreground: oklch(0.2 0.02 260);
+  --secondary: oklch(0.965 0 0);
+  --secondary-foreground: oklch(0.15 0 0);
   
-  --muted: oklch(0.95 0.006 260);
-  --muted-foreground: oklch(0.48 0.018 260);
+  --muted: oklch(0.965 0 0);
+  --muted-foreground: oklch(0.48 0 0);
   
-  --accent: oklch(0.95 0.008 260);
-  --accent-foreground: oklch(0.18 0.02 260);
+  --accent: oklch(0.965 0 0);
+  --accent-foreground: oklch(0.15 0 0);
   
   --destructive: oklch(0.62 0.22 25);
   --destructive-foreground: oklch(0.99 0 0);
   
-  --border: oklch(0.18 0.02 260 / 0.1);
-  --input: oklch(0.18 0.02 260 / 0.12);
+  --border: oklch(0.15 0 0 / 0.08);
+  --input: oklch(0.15 0 0 / 0.09);
   --ring: oklch(0.52 0.22 265 / 0.4);
   
   --radius: 0.75rem;
   
-  --sidebar: oklch(0.99 0 0);
-  --sidebar-foreground: oklch(0.18 0.02 260);
+  --sidebar: #fcfcfc;
+  --sidebar-foreground: oklch(0.15 0 0);
   --sidebar-primary: oklch(0.52 0.22 265);
   --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.955 0.008 260);
-  --sidebar-accent-foreground: oklch(0.18 0.02 260);
-  --sidebar-border: oklch(0.18 0.02 260 / 0.09);
+  --sidebar-accent: oklch(0.965 0 0);
+  --sidebar-accent-foreground: oklch(0.15 0 0);
+  --sidebar-border: oklch(0.15 0 0 / 0.08);
   --sidebar-ring: oklch(0.52 0.22 265);
 
   /* Better-UI: Multi-layer depth shadows for Light Mode */
@@ -90,14 +90,14 @@
 }
 
 .dark {
-  /* Theme: Official shadcn Neutral / Zinc Dark */
-  --background: oklch(0.145 0 0);
+  /* Theme: beUI Dark Background (#151515) */
+  --background: #151515;
   --foreground: oklch(0.985 0 0);
   
-  --card: oklch(0.145 0 0);
+  --card: #151515;
   --card-foreground: oklch(0.985 0 0);
   
-  --popover: oklch(0.145 0 0);
+  --popover: #151515;
   --popover-foreground: oklch(0.985 0 0);
   
   --primary: oklch(0.985 0 0);
@@ -119,7 +119,7 @@
   --input: oklch(0.269 0 0);
   --ring: oklch(0.439 0 0);
   
-  --sidebar: oklch(0.145 0 0);
+  --sidebar: #151515;
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.985 0 0);
   --sidebar-primary-foreground: oklch(0.145 0 0);
