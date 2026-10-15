@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { Plus, Ban, Eye, Calculator, Wrench, ArrowRight, Search, FileText, MapPin, Phone, Building2 } from "lucide-react";
+import { Plus, Ban, Eye, Calculator, Wrench, ArrowRight, Search, FileText, MapPin, Phone, Building2, Mail, Tag, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import api from "@/lib/axios";
@@ -34,6 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 
 export default function SolicitudesPage() {
   const router = useRouter();
@@ -515,29 +516,50 @@ export default function SolicitudesPage() {
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreateSubmit} className="space-y-4 pt-2">
+            {/* SELECCIÓN DE CLIENTE CON BUSCADOR EN VIVO */}
             <div className="space-y-2">
-              <Label htmlFor="cliente">Cliente *</Label>
-              <Select value={createFormData.clienteId} onValueChange={(val) => setCreateFormData({...createFormData, clienteId: val || ""})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona un cliente" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clientes.map(c => (
-                    <SelectItem key={c.id} value={c.id.toString()}>{c.nombre}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="cliente">Cliente Solicitante *</Label>
+              <Combobox
+                id="cliente"
+                value={createFormData.clienteId}
+                onValueChange={(val) => {
+                  const cli = clientes.find((c) => c.id.toString() === val);
+                  setCreateFormData((prev) => {
+                    const prevCli = clientes.find((c) => c.id.toString() === prev.clienteId);
+                    const shouldAutoFill = !prev.direccion || prev.direccion === prevCli?.direccion;
+                    return {
+                      ...prev,
+                      clienteId: val,
+                      direccion: shouldAutoFill && cli?.direccion ? cli.direccion : prev.direccion,
+                    };
+                  });
+                }}
+                placeholder="Selecciona o busca un cliente..."
+                searchPlaceholder="Buscar por nombre, teléfono o dirección..."
+                emptyMessage="No se encontraron clientes coincidentes"
+                options={clientes.map((c) => ({
+                  value: c.id.toString(),
+                  label: c.nombre,
+                  description: [c.telefono ? `Tel: ${c.telefono}` : null, c.direccion].filter(Boolean).join(" • "),
+                }))}
+              />
             </div>
 
+            {/* SELECCIÓN DE CATEGORÍA */}
             <div className="space-y-2">
               <Label htmlFor="categoria">Categoría del Servicio</Label>
-              <Select value={createFormData.categoriaId} onValueChange={(val) => setCreateFormData({...createFormData, categoriaId: val || ""})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona categoría (opcional)" />
+              <Select
+                value={createFormData.categoriaId}
+                onValueChange={(val) => setCreateFormData({ ...createFormData, categoriaId: val || "" })}
+              >
+                <SelectTrigger id="categoria">
+                  <SelectValue placeholder="Selecciona una categoría (opcional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categorias.map(c => (
-                    <SelectItem key={c.id} value={c.id.toString()}>{c.nombre}</SelectItem>
+                  {categorias.map((c) => (
+                    <SelectItem key={c.id} value={c.id.toString()} label={c.nombre}>
+                      {c.nombre}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { 
   CheckCircle, 
   Users, 
@@ -48,6 +48,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 
 export default function OrdenesPage() {
   const { user } = useAuthStore();
@@ -516,27 +517,26 @@ export default function OrdenesPage() {
           <form onSubmit={handleCrearOrdenSubmit} className="space-y-4 pt-2">
             <div className="space-y-2">
               <Label htmlFor="solicitud">Solicitud de Servicio *</Label>
-              <Select 
-                value={nuevaOrdenForm.solicitudId} 
+              <Combobox
+                id="solicitud"
+                value={nuevaOrdenForm.solicitudId}
                 onValueChange={(val) => {
-                  const sol = solicitudes.find(s => s.id.toString() === val);
-                  setNuevaOrdenForm({
-                    solicitudId: val || "",
-                    descripcion: sol ? sol.descripcion : nuevaOrdenForm.descripcion
-                  });
+                  const sol = solicitudes.find((s) => s.id.toString() === val);
+                  setNuevaOrdenForm((prev) => ({
+                    ...prev,
+                    solicitudId: val,
+                    descripcion: sol && !prev.descripcion ? sol.descripcion : prev.descripcion,
+                  }));
                 }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona una solicitud pendiente" />
-                </SelectTrigger>
-                <SelectContent>
-                  {solicitudes.map(s => (
-                    <SelectItem key={s.id} value={s.id.toString()}>
-                      #{s.id} - {s.clienteNombre} ({s.descripcion.substring(0, 30)}...)
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Selecciona o busca una solicitud..."
+                searchPlaceholder="Buscar por #ID, cliente o descripción..."
+                emptyMessage="No se encontraron solicitudes pendientes"
+                options={solicitudes.map((s) => ({
+                  value: s.id.toString(),
+                  label: `#${s.id} - ${s.clienteNombre}`,
+                  description: s.descripcion,
+                }))}
+              />
             </div>
 
             <div className="space-y-2">
@@ -573,18 +573,19 @@ export default function OrdenesPage() {
           <form onSubmit={handleAsignar} className="space-y-4 pt-2">
             <div className="space-y-2">
               <Label htmlFor="tecnico">Técnico Disponible *</Label>
-              <Select value={selectedTecnico} onValueChange={(val) => setSelectedTecnico(val || "")}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona un técnico activo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tecnicos.map(t => (
-                    <SelectItem key={t.id} value={t.id.toString()}>
-                      {t.nombre} ({t.email})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                id="tecnico"
+                value={selectedTecnico}
+                onValueChange={(val) => setSelectedTecnico(val)}
+                placeholder="Selecciona o busca un técnico..."
+                searchPlaceholder="Buscar técnico por nombre o correo..."
+                emptyMessage="No se encontraron técnicos disponibles"
+                options={tecnicos.map((t) => ({
+                  value: t.id.toString(),
+                  label: t.nombre,
+                  description: t.email,
+                }))}
+              />
             </div>
             <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={() => setIsAsignarOpen(false)}>
@@ -614,12 +615,22 @@ export default function OrdenesPage() {
                 value={evidenciaTipo} 
                 onValueChange={(val) => setEvidenciaTipo(val as TipoEvidencia)}
               >
-                <SelectTrigger>
-                  <SelectValue />
+                <SelectTrigger id="tipo">
+                  <SelectValue placeholder="Selecciona tipo de evidencia" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="FOTO">Fotografía de Ejecución</SelectItem>
-                  <SelectItem value="NOTA">Nota Técnica Descriptiva</SelectItem>
+                  <SelectItem value="FOTO" label="Fotografía de Ejecución">
+                    <div className="flex items-center gap-2 py-0.5">
+                      <Camera className="h-3.5 w-3.5 text-primary" />
+                      <span>Fotografía de Ejecución</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="NOTA" label="Nota Técnica Descriptiva">
+                    <div className="flex items-center gap-2 py-0.5">
+                      <FileText className="h-3.5 w-3.5 text-primary" />
+                      <span>Nota Técnica Descriptiva</span>
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>

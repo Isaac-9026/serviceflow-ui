@@ -387,13 +387,13 @@ export default function UsuariosPage() {
                 value={createForm.rol}
                 onValueChange={(val) => setCreateForm({ ...createForm, rol: val as Rol })}
               >
-                <SelectTrigger>
+                <SelectTrigger id="create-rol">
                   <SelectValue placeholder="Selecciona un rol" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ADMIN">Administrador (Control Total)</SelectItem>
-                  <SelectItem value="COORDINADOR">Coordinador (Gestión Operativa)</SelectItem>
-                  <SelectItem value="TECNICO">Técnico (Ejecución de Campo)</SelectItem>
+                  <SelectItem value="ADMIN" label="Administrador">Administrador</SelectItem>
+                  <SelectItem value="COORDINADOR" label="Coordinador">Coordinador</SelectItem>
+                  <SelectItem value="TECNICO" label="Técnico">Técnico</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -457,13 +457,13 @@ export default function UsuariosPage() {
                 value={editForm.rol}
                 onValueChange={(val) => setEditForm({ ...editForm, rol: val as Rol })}
               >
-                <SelectTrigger>
+                <SelectTrigger id="edit-rol">
                   <SelectValue placeholder="Selecciona un rol" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ADMIN">Administrador</SelectItem>
-                  <SelectItem value="COORDINADOR">Coordinador</SelectItem>
-                  <SelectItem value="TECNICO">Técnico</SelectItem>
+                  <SelectItem value="ADMIN" label="Administrador">Administrador</SelectItem>
+                  <SelectItem value="COORDINADOR" label="Coordinador">Coordinador</SelectItem>
+                  <SelectItem value="TECNICO" label="Técnico">Técnico</SelectItem>
                 </SelectContent>
               </Select>
             </div>

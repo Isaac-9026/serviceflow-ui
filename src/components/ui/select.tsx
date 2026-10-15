@@ -5,7 +5,63 @@ import { Select as SelectPrimitive } from "@base-ui/react/select"
 import { cn } from "cn"
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 
-const Select = SelectPrimitive.Root
+const SelectLabelContext = React.createContext<Record<string, string>>({})
+
+function getNodeText(node: React.ReactNode): string {
+  if (node === null || node === undefined) return ""
+  if (typeof node === "string" || typeof node === "number") return String(node)
+  if (Array.isArray(node)) return node.map(getNodeText).join(" ").trim()
+  if (React.isValidElement(node)) {
+    const props = node.props as any
+    if (props) {
+      if (props.label) return String(props.label)
+      if (props.children) return getNodeText(props.children)
+    }
+  }
+  return ""
+}
+
+function Select<Value = any, Multiple extends boolean | undefined = false>({
+  items,
+  children,
+  ...props
+}: SelectPrimitive.Root.Props<Value, Multiple> & {
+  items?: Record<string, string>
+}) {
+  const extractedItems = React.useMemo(() => {
+    if (items) return items
+    const result: Record<string, string> = {}
+    function walk(node: React.ReactNode) {
+      if (!node) return
+      if (Array.isArray(node)) {
+        node.forEach(walk)
+        return
+      }
+      if (React.isValidElement(node)) {
+        const p = node.props as any
+        if (p && p.value !== undefined && p.children) {
+          const text = (p.label ? String(p.label) : "") || getNodeText(p.children)
+          if (text) {
+            result[String(p.value)] = text
+          }
+        }
+        if (p && p.children) {
+          walk(p.children)
+        }
+      }
+    }
+    walk(children)
+    return result
+  }, [items, children])
+
+  return (
+    <SelectLabelContext.Provider value={extractedItems}>
+      <SelectPrimitive.Root items={extractedItems} {...props}>
+        {children}
+      </SelectPrimitive.Root>
+    </SelectLabelContext.Provider>
+  )
+}
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (
@@ -17,13 +73,38 @@ function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   )
 }
 
-function SelectValue({ className, ...props }: SelectPrimitive.Value.Props) {
+function SelectValue({
+  className,
+  placeholder,
+  children,
+  ...props
+}: SelectPrimitive.Value.Props) {
+  const ctx = React.useContext(SelectLabelContext)
+
   return (
     <SelectPrimitive.Value
       data-slot="select-value"
-      className={cn("flex flex-1 text-left", className)}
+      className={cn("flex flex-1 text-left truncate min-w-0", className)}
+      placeholder={placeholder}
       {...props}
-    />
+    >
+      {(value: any) => {
+        if (value === null || value === undefined || value === "") {
+          return placeholder
+        }
+        if (typeof children === "function") {
+          return children(value)
+        }
+        if (children) {
+          return children
+        }
+        const strVal = String(value)
+        if (ctx && ctx[strVal]) {
+          return ctx[strVal]
+        }
+        return value
+      }}
+    </SelectPrimitive.Value>
   )
 }
 
@@ -40,7 +121,7 @@ function SelectTrigger({
       data-slot="select-trigger"
       data-size={size}
       className={cn(
-        "flex w-fit items-center justify-between gap-1.5 rounded-lg border border-input bg-transparent py-2 pr-2.5 pl-3 text-sm whitespace-nowrap transition-[border-color,box-shadow,background-color] duration-150 ease-out outline-none select-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-2 aria-invalid:ring-destructive/20 data-placeholder:text-muted-foreground/60 data-[size=default]:h-9 data-[size=sm]:h-8 data-[size=sm]:rounded-[min(var(--radius-md),10px)] *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 dark:bg-input/30 dark:hover:bg-input/50",
+        "flex w-full min-w-0 items-center justify-between gap-1.5 rounded-lg border border-input bg-transparent py-2 pr-2.5 pl-3 text-sm whitespace-nowrap transition-[border-color,box-shadow,background-color] duration-150 ease-out outline-none select-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-2 aria-invalid:ring-destructive/20 data-placeholder:text-muted-foreground/60 data-[size=default]:h-9 data-[size=sm]:h-8 data-[size=sm]:rounded-[min(var(--radius-md),10px)] *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 dark:bg-input/30 dark:hover:bg-input/50",
         className
       )}
       {...props}
@@ -110,13 +191,15 @@ function SelectLabel({
 function SelectItem({
   className,
   children,
+  label,
   ...props
-}: SelectPrimitive.Item.Props) {
+}: SelectPrimitive.Item.Props & { label?: string }) {
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
+      label={label}
       className={cn(
-        "relative flex w-full cursor-default items-center gap-1.5 rounded-md py-1 pr-8 pl-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
+        "relative flex w-full cursor-default items-center gap-1.5 rounded-md py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
         className
       )}
       {...props}
